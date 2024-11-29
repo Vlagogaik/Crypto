@@ -8,10 +8,9 @@ import org.task.Cripto.service.MessageService;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Random;
-
 import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
+//@Slf4j
 @RestController
 @RequestMapping("/api")
 public class EncryptionController {
@@ -61,13 +60,40 @@ public class EncryptionController {
                 throw new IllegalArgumentException("Invalid encryption method");
         }
     }
-    @GetMapping("/generate")
+    @PostMapping("/decryptSEM")
+    public String decryptSEM(@RequestBody Map<String, String> request) throws Exception {
+        String encryptedMessage = request.get("message");
+        String method = request.get("method");
+        log.info("Decrypting message: '{}' with method: '{}", encryptedMessage, method);
+        return "Received: " + encryptedMessage + " and method: " + method;
+
+    }
+    @PostMapping("/generate")
+    public String generateKeysGEN(@RequestBody Map<String, String> request) throws Exception {
+        String method = request.get("method");
+        if( method.equals("rsa")){
+            return "PUBKIC KEY: " + encryptionService.getPublicKey() + "\nPRIVATE KEY: " + encryptionService.getPrivateKey();
+        } else if (method.equals("aes")) {
+            return "AES KEY: " + encryptionService.getAesKeyOFF();
+        }else{
+            return "ERROR NOT FOUND METHOD";
+        }
+
+    }
+
     public String generateKeys(@RequestParam String method) throws Exception {
             this.privateKey = encryptionService.getPrivateKey();
             return encryptionService.getPublicKey();
     }
     @PostMapping("/send_public_key")
     public String SendKey(@RequestBody String method) throws Exception {
+        String key = generateKeys(method);
+        log.info("Sending key '{}' with method '{}'", key, method);
+        return messageService.sendEncryptedMessage(method, key);
+    }
+    @PostMapping("/get_public_key")
+    public String GetKey(@RequestBody Map<String, String> request) throws Exception {
+        String method = request.get("method");
         String key = generateKeys(method);
         log.info("Sending key '{}' with method '{}'", key, method);
         return messageService.sendEncryptedMessage(method, key);

@@ -21,9 +21,24 @@ public class EncryptionController {
         this.encryptionService = encryptionService;
         this.messageService = messageService;
     }
+    @PostMapping("/send_encrypted_msg")
+    public String sendEncryptedMessage(@RequestBody Map<String, String> request) throws Exception {
+        String encryptedMessage = request.get("message");
+        String method = request.get("method");
+        log.info("Sending encrypted message: '{}' using method: '{}' ", encryptedMessage, method);
+        switch (method.toLowerCase()) {
+            case "caesar":
+            case "aes":
+            case "rsa":
+                return messageService.sendEncryptedMessageSEM(encryptedMessage, method);
+            default:
+                throw new IllegalArgumentException("Invalid encryption method");
+        }
+    }
     @PostMapping("/get_public_key")
     public String getKey(@RequestBody Map<String, String> request) throws Exception {
         this.publicKey = request.get("publickey");
+        log.info("Get public Key: '{}'", publicKey);
         return  publicKey;
     }
     @PostMapping("/encrypt")

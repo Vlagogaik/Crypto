@@ -18,6 +18,13 @@ public class MessageService {
         request.put("key", key);
         return restTemplate.postForObject(url, request, String.class);
     }
+    public String sendEncryptedMessageSEM(String message, String method) {
+        String url = "http://localhost:8081/api/decryptSEM";
+        var request = new HashMap<String, String>();
+        request.put("message", message);
+        request.put("method", method);
+        return restTemplate.postForObject(url, request, String.class);
+    }
     public String sendGengerateKey(String method) {
         String url = "http://localhost:8081/api/send_public_key";
         Map<String, String> request = new HashMap<>();
@@ -25,5 +32,6 @@ public class MessageService {
         String publicKey = restTemplate.postForObject(url, request, String.class);
         return publicKey;
     }
+
 }
 

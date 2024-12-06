@@ -76,7 +76,7 @@ public class EncryptionController {
                 return encryptionService.aesDecrypt(encryptedMessage, keyAES);
             case "rsa":
                 return encryptionService.rsaDecrypt(encryptedMessage);
-            case "rs4":
+            case "rc4":
                 return encryptionService.decryptRC4(encryptedMessage, keyRC4);
             default:
                 throw new IllegalArgumentException("Invalid encryption method");

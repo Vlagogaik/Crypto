@@ -15,7 +15,12 @@ public class EncryptionController {
     private static final Logger log = LoggerFactory.getLogger(EncryptionController.class);
     private final EncryptionService encryptionService;
     private final MessageService messageService;
-    private String publicKey;
+    private String publicRSAKey;
+    private String privateRSAKey;
+    private String keyAES;
+    private String keyCaesar;
+    private String encryptMessage;
+    private String encryptMethod;
 
     public EncryptionController(EncryptionService encryptionService, MessageService messageService) {
         this.encryptionService = encryptionService;
@@ -23,100 +28,102 @@ public class EncryptionController {
     }
     @PostMapping("/send_encrypted_msg")
     public String sendEncryptedMessage(@RequestBody Map<String, String> request) throws Exception {
-        String encryptedMessage = request.get("message");
-        String method = request.get("method");
-        log.info("Sending encrypted message: '{}' using method: '{}' ", encryptedMessage, method);
-        switch (method.toLowerCase()) {
-            case "caesar":
-            case "aes":
-            case "rsa":
-                return messageService.sendEncryptedMessageSEM(encryptedMessage, method);
-            default:
-                throw new IllegalArgumentException("Invalid encryption method");
+        if ((request.get("message") == null || request.get("method") == null) && (encryptMethod != null && encryptMessage != null)) {
+            log.info("Sending encrypted LOCAL message: '{}' using method: '{}' ", encryptMessage, encryptMethod);
+            return messageService.sendEncryptedMessageSEM(encryptMessage, encryptMethod);
+        } else if ((encryptMethod == null || encryptMessage == null) && (request.get("message") != null || request.get("method") != null)) {
+            String encryptedMessage = request.get("message");
+            String method = request.get("method");
+            log.info("Sending encrypted REQUEST message: '{}' using method: '{}' ", encryptedMessage, method);
+            return messageService.sendEncryptedMessageSEM(encryptedMessage, method);
         }
+        return "ERROR: 404 NOT FOUND MESSAGE OR METHOD";
     }
     @PostMapping("/get_public_key")
     public String getKey(@RequestBody Map<String, String> request) throws Exception {
-        this.publicKey = request.get("publickey");
-        log.info("Get public Key: '{}'", publicKey);
-        return  publicKey;
+        String method = request.get("method");
+        switch (method.toLowerCase()) {
+            case "rsa" -> {
+                if (request.get("publickey") != null) {
+                    this.publicRSAKey = request.get("publickey");
+                    log.info("GET key '{}' with method '{}'", publicRSAKey, method);
+                    return publicRSAKey;
+                } else {
+                    log.error("ERROR NOT GENERATED KEY OR KEY ALREADY EXISTS");
+                    return "ERROR NOT GENERATED KEY OR KEY ALREADY EXISTS";
+                }
+            }
+            case "aes" -> {
+                if (request.get("publickey") != null) {
+                    this.keyAES = request.get("publickey");
+                    log.info("GET key '{}' with method '{}'", keyAES, method);
+                    return keyAES;
+                } else {
+                    log.error("ERROR NOT GENERATED KEY OR KEY ALREADY EXISTS");
+                    return "ERROR NOT GENERATED KEY OR KEY ALREADY EXISTS";
+                }
+            }
+            case "caesar" -> {
+                if (request.get("publickey") != null) {
+                    this.keyCaesar = request.get("publickey");
+                    log.info("GET key '{}' with method '{}'", keyCaesar, method);
+                    return keyCaesar;
+                } else {
+                    log.error("ERROR NOT GENERATED KEY OR KEY ALREADY EXISTS");
+                    return "ERROR NOT GENERATED KEY OR KEY ALREADY EXISTS";
+                }
+            }
+            default -> {
+                log.error("ERROR NOT FOUND METHOD");
+                return "ERROR NOT FOUND METHOD";
+            }
+        }
     }
     @PostMapping("/encrypt")
     public String encryptOnly(@RequestBody Map<String, String> request) throws Exception {
         String message = request.get("message");
         String method = request.get("method");
-        String key;
-        switch (method.toLowerCase()) {
-            case "caesar":
-                Random random = new Random();
-                int randomNumber = random.nextInt(26) + 1;
-                log.info("Encrypting message: '{}' with method: '{}' whith key: '{}' ", message, method, randomNumber);
-                return encryptionService.caesarEncrypt(message, randomNumber);
-            case "aes":
-                key = encryptionService.getAesKeyOFF();
-                log.info("Encrypting message: '{}' with method: '{}' whith key: '{}' ", message, method, key);
-                return encryptionService.aesEncrypt(message, key);
-            case "rsa":
-                key = encryptionService.getPublicKey();
-                log.info("Encrypting message: '{}' with method: '{}' whith key: '{}' ", message, method, key);
-                return encryptionService.rsaEncrypt(message, key);
-            default:
-                throw new IllegalArgumentException("Invalid encryption method 000");
-        }
-    }
-
-    public String encrypt(@RequestBody Map<String, String> request, String key) throws Exception {
-        String message = request.get("message");
-        String method = request.get("method");
-
-//        log.info("Encrypting message: '{}' with method: '{}' whith key: '{}' ", message, method, key);
-        switch (method.toLowerCase()) {
-            case "caesar":
-                int numberKey = Integer.parseInt(key);
-                return encryptionService.caesarEncrypt(message, numberKey);
-            case "aes":
-                return encryptionService.aesEncrypt(message, key);
-            case "rsa":
-                return encryptionService.rsaEncrypt(message, key);
-            default:
-                throw new IllegalArgumentException("Invalid encryption method 000");
-        }
-    }
-
-    @GetMapping("/generate")
-    public String generateKeys(@RequestParam String method) throws Exception {
-            if(method.toLowerCase().equals("rsa")){
-                return "Open RSA key: " + messageService.sendGengerateKey("rsa");
-            } else if (method.toLowerCase().equals("aes")) {
-                return encryptionService.getAesKeyOFF();
+        return switch (method.toLowerCase()) {
+            case "caesar" -> {
+                if (keyCaesar == null) {
+                    log.error("ERROR NOT GENERATED CAESAR KEY");
+                    yield "ERROR NOT GENERATED CAESAR KEY";
+                }else{
+                    this.encryptMessage = encryptionService.caesarEncrypt(message, Integer.parseInt(keyCaesar));
+                    this.encryptMethod = "caesar";
+                    log.info("Encrypting message: '{}' with method: '{}' whith key: '{}' ", message, method, keyCaesar);
+                    yield encryptMessage;
+                }
             }
-        return "ERROR: Not found method!";
+            case "aes" -> {
+                if (keyAES == null) {
+                    log.error("ERROR NOT GENERATED AES KEY");
+                    yield "ERROR NOT GENERATED AES KEY";
+                }else {
+                    this.encryptMessage = encryptionService.aesEncrypt(message, keyAES);
+                    this.encryptMethod = "aes";
+                    log.info("Encrypting message: '{}' with method: '{}' whith key: '{}' ", message, method, keyAES);
+                    yield encryptionService.aesEncrypt(message, keyAES);
+                }
+            }
+            case "rsa" -> {
+                if (publicRSAKey == null) {
+                    log.error("ERROR NOT GENERATED RSA KEY");
+                    yield "ERROR NOT GENERATED RSA KEY";
+                }else {
+                    this.encryptMessage = encryptionService.rsaEncrypt(message, publicRSAKey);
+                    this.encryptMethod = "rsa";
+                    log.info("Encrypting message: '{}' with method: '{}' whith key: '{}' ", message, method, publicRSAKey);
+                    yield encryptionService.rsaEncrypt(message, publicRSAKey);
+                }
+            }
+            default -> throw new IllegalArgumentException("Invalid encryption method 000");
+        };
     }
+
     @PostMapping("/encrypt_and_send")
     public String encryptAndSend(@RequestBody Map<String, String> request) throws Exception {
-        String message = request.get("message");
-        String method = request.get("method");
-
-//        log.info("Encrypting and sending message '{}' with method '{}'", message, method);
-        switch (method.toLowerCase()) {
-            case "caesar":
-                Random random = new Random();
-                int randomNumber = random.nextInt(26) + 1;
-                String key0 = String.valueOf(randomNumber);
-                log.info("CASE caesar with message '{}' with method '{}' and key '{}'", message, method, key0);
-                return messageService.sendEncryptedMessage(encrypt(request, key0), method, key0);
-            case "aes":
-                String aesKey = encryptionService.getAesKey(messageService.sendGengerateKey("rsa"));
-                log.info("CASE AES with message '{}' with method '{}' and key '{}'", message, method, aesKey);
-                return messageService.sendEncryptedMessage(encrypt(request, null), method, aesKey);
-            case "rsa":
-                String key = messageService.sendGengerateKey(method.toLowerCase());
-                log.info("CASE AES with message '{}' with method '{}' and key '{}'", message, method);
-                return messageService.sendEncryptedMessage(encrypt(request, key), method, null);
-            default:
-                throw new IllegalArgumentException("Invalid encryption_send method");
-        }
+        messageService.sendGengerateKey(request.get("method"));
+        return messageService.sendEncryptedMessage(encryptOnly(request) , request.get("method"));
     }
-
-
 }

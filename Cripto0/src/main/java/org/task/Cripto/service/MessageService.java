@@ -9,7 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 public class MessageService {
     private final RestTemplate restTemplate = new RestTemplate();
 
-    public String sendEncryptedMessage(String method, String key) {
+    public String sendKey(String method, String key) {
         String url = "http://localhost:8080/api/get_public_key";
         var request = new HashMap<String, String>();
         request.put("method", method);

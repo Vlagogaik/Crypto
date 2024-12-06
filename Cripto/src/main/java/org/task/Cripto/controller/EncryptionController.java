@@ -19,6 +19,7 @@ public class EncryptionController {
     private String privateRSAKey;
     private String keyAES;
     private String keyCaesar;
+    private String keyRC4;
     private String encryptMessage;
     private String encryptMethod;
 
@@ -73,6 +74,16 @@ public class EncryptionController {
                     return "ERROR NOT GENERATED KEY OR KEY ALREADY EXISTS";
                 }
             }
+            case "rc4" -> {
+                if (request.get("publickey") != null) {
+                    this.keyRC4 = request.get("publickey");
+                    log.info("GET key '{}' with method '{}'", keyRC4, method);
+                    return keyRC4;
+                } else {
+                    log.error("ERROR NOT GENERATED KEY OR KEY ALREADY EXISTS");
+                    return "ERROR NOT GENERATED KEY OR KEY ALREADY EXISTS";
+                }
+            }
             default -> {
                 log.error("ERROR NOT FOUND METHOD");
                 return "ERROR NOT FOUND METHOD";
@@ -103,7 +114,7 @@ public class EncryptionController {
                     this.encryptMessage = encryptionService.aesEncrypt(message, keyAES);
                     this.encryptMethod = "aes";
                     log.info("Encrypting message: '{}' with method: '{}' whith key: '{}' ", message, method, keyAES);
-                    yield encryptionService.aesEncrypt(message, keyAES);
+                    yield encryptMessage;
                 }
             }
             case "rsa" -> {
@@ -114,7 +125,18 @@ public class EncryptionController {
                     this.encryptMessage = encryptionService.rsaEncrypt(message, publicRSAKey);
                     this.encryptMethod = "rsa";
                     log.info("Encrypting message: '{}' with method: '{}' whith key: '{}' ", message, method, publicRSAKey);
-                    yield encryptionService.rsaEncrypt(message, publicRSAKey);
+                    yield encryptMessage;
+                }
+            }
+            case "rc4" -> {
+                if (keyRC4 == null) {
+                    log.error("ERROR NOT GENERATED RSA KEY");
+                    yield "ERROR NOT GENERATED RSA KEY";
+                }else {
+                    this.encryptMessage = encryptionService.encryptRC4(message, keyRC4);
+                    this.encryptMethod = "rc4";
+                    log.info("Encrypting message: '{}' with method: '{}' whith key: '{}' ", message, method, keyRC4);
+                    yield encryptMessage;
                 }
             }
             default -> throw new IllegalArgumentException("Invalid encryption method 000");

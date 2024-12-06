@@ -18,6 +18,7 @@ public class EncryptionController {
     private String publicRSAKey;
     private String privateRSAKey;
     private String keyAES;
+    private String keyRC4;
     private String keyCaesar;
     private String encryptMessage;
     private String encryptMethod;
@@ -38,6 +39,7 @@ public class EncryptionController {
                     case "caesar" -> encryptionService.caesarDecrypt(encryptedMessage, Integer.parseInt(keyCaesar));
                     case "aes" -> encryptionService.aesDecrypt(encryptedMessage, keyAES);
                     case "rsa"-> encryptionService.rsaDecrypt(encryptedMessage);
+                    case "rc4"-> encryptionService.decryptRC4(encryptedMessage, keyRC4);
                     default -> throw new IllegalArgumentException("Invalid encryption_send method");
                 };
             }else{
@@ -54,6 +56,7 @@ public class EncryptionController {
                     case "caesar" -> encryptionService.caesarDecrypt(encryptMessage, Integer.parseInt(keyCaesar));
                     case "aes" -> encryptionService.aesDecrypt(encryptMessage, keyAES);
                     case "rsa" -> encryptionService.rsaDecrypt(encryptMessage);
+                    case "rc4"-> encryptionService.decryptRC4(encryptMessage, keyRC4);
                     default -> throw new IllegalArgumentException("Invalid encryption_send method");
                 };
             }
@@ -73,6 +76,8 @@ public class EncryptionController {
                 return encryptionService.aesDecrypt(encryptedMessage, keyAES);
             case "rsa":
                 return encryptionService.rsaDecrypt(encryptedMessage);
+            case "rs4":
+                return encryptionService.decryptRC4(encryptedMessage, keyRC4);
             default:
                 throw new IllegalArgumentException("Invalid encryption method");
         }
@@ -102,6 +107,10 @@ public class EncryptionController {
                 this.keyCaesar = encryptionService.getCaesatKey();
                 return keyCaesar;
             }
+            case "rc4" -> {
+                this.keyRC4 = encryptionService.generateRC4Key();
+                return keyRC4;
+            }
             default -> {
                 return "ERROR NOT FOUND METHOD";
             }
@@ -115,7 +124,7 @@ public class EncryptionController {
             case "rsa" -> {
                 if (publicRSAKey != null) {
                     log.info("Sending key '{}' with method '{}'", publicRSAKey, method);
-                    return messageService.sendEncryptedMessage(method, publicRSAKey);
+                    return messageService.sendKey(method, publicRSAKey);
                 } else {
                     log.error("ERROR NOT GENERATED KEY");
                     return "ERROR NOT GENERATED KEY";
@@ -124,7 +133,7 @@ public class EncryptionController {
             case "aes" -> {
                 if (keyAES != null) {
                     log.info("Sending key '{}' with method '{}'", keyAES, method);
-                    return messageService.sendEncryptedMessage(method, keyAES);
+                    return messageService.sendKey(method, keyAES);
                 } else {
                     log.error("ERROR NOT GENERATED KEY");
                     return "ERROR NOT GENERATED KEY";
@@ -133,7 +142,16 @@ public class EncryptionController {
             case "caesar" -> {
                 if (keyCaesar != null) {
                     log.info("Sending key '{}' with method '{}'", keyCaesar, method);
-                    return messageService.sendEncryptedMessage(method, keyCaesar);
+                    return messageService.sendKey(method, keyCaesar);
+                } else {
+                    log.error("ERROR NOT GENERATED KEY");
+                    return "ERROR NOT GENERATED KEY";
+                }
+            }
+            case "rc4" -> {
+                if (keyRC4 != null) {
+                    log.info("Sending key '{}' with method '{}'", keyRC4, method);
+                    return messageService.sendKey(method, keyRC4);
                 } else {
                     log.error("ERROR NOT GENERATED KEY");
                     return "ERROR NOT GENERATED KEY";

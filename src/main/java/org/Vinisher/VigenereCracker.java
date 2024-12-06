@@ -89,21 +89,20 @@ public class VigenereCracker extends Convert{
         return Collections.max(frequencyMap.entrySet(), Map.Entry.comparingByValue()).getKey();
     }
 
-public String crackVigenere(String message) {
-    criptoCtoN = fillMap();
-    int keyLength = findKeyLength(message);
-    if (keyLength == 0) {
-        return "The key length could not be determined.";
+    public String crackVigenere(String message) {
+        criptoCtoN = fillMap();
+        int keyLength = findKeyLength(message);
+        if (keyLength == 0) {
+            return "The key length could not be determined.";
+        }
+        System.out.println("Key length: " + keyLength);
+        String key = crackKey(message, keyLength);
+        System.out.println("Found key: " + key);
+        ArrayList<Integer> encodedMessage = encode(message);
+        ArrayList<Integer> keyEncoded = encode(key);
+        ArrayList<Integer> decoded = fullDecode(encodedMessage, keyEncoded);
+        String decodedMessage = decode(decoded);
+        return decodedMessage;
     }
-    System.out.println("Key length: " + keyLength);
-    String key = crackKey(message, keyLength);
-    System.out.println("Found key: " + key);
-    ArrayList<Integer> encodedMessage = encode(message);
-    ArrayList<Integer> keyEncoded = encode(key);
-    ArrayList<Integer> decoded = fullDecode(encodedMessage, keyEncoded);
-    String decodedMessage = decode(decoded);
-    return decodedMessage;
-}
-
 
 }

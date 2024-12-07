@@ -47,12 +47,12 @@ public class EncryptionController {
                 return "ERROR NOT FOUND MESSAGE OR METHOD";
             }
         }else {
-            if(encryptMessage == null || encryptMethod == null){
+            if(encryptMessage == null || request.get("method") == null){
                 log.error("ERROR NOT FOUND MESSAGE OR METHOD");
                 return "ERROR NOT FOUND MESSAGE OR METHOD";
             }else {
                 log.info("Decrypting message WITH local data: '{}' with method: '{}'", encryptMessage, encryptMethod);
-                return switch (encryptMethod.toLowerCase()) {
+                return switch (request.get("method")) {
                     case "caesar" -> encryptionService.caesarDecrypt(encryptMessage, Integer.parseInt(keyCaesar));
                     case "aes" -> encryptionService.aesDecrypt(encryptMessage, keyAES);
                     case "rsa" -> encryptionService.rsaDecrypt(encryptMessage);
